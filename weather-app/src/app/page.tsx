@@ -3,11 +3,13 @@
 import dynamic from "next/dynamic";
 import { useWeather } from "@/hooks/useWeather";
 import { useSearches } from "@/hooks/useSearches";
+import { useEnrichment } from "@/hooks/useEnrichment";
 import SearchBar from "@/components/SearchBar";
 import WeatherCard from "@/components/WeatherCard";
 import ForecastStrip from "@/components/ForecastStrip";
 import YouTubePanel from "@/components/YouTubePanel";
 import DateRangeSearch from "@/components/DateRangeSearch";
+import InsightsPanel from "@/components/InsightsPanel";
 import ErrorMessage from "@/components/ErrorMessage";
 import LoadingSpinner from "@/components/LoadingSpinner";
 import PMAcceleratorBanner from "@/components/PMAcceleratorBanner";
@@ -37,6 +39,12 @@ export default function HomePage() {
   } = useWeather();
 
   const { create, saving: dbSaving } = useSearches();
+  const {
+    data: enrichment,
+    loading: enrichmentLoading,
+    fetch: fetchEnrichment,
+    clear: clearEnrichment,
+  } = useEnrichment();
 
   const handleSave = () => {
     if (data) saveSearch(data.current.name);
@@ -47,9 +55,24 @@ export default function HomePage() {
     start: string,
     end: string
   ) => {
-    // Save the range query to DB automatically
     await create(location, start, end);
   };
+
+  // Fetch enrichment data whenever weather data changes
+  const handleSearch = (location: string) => {
+    clearEnrichment();
+    search(location);
+  };
+
+  const handleGeolocate = () => {
+    clearEnrichment();
+    geolocate();
+  };
+
+  // Trigger enrichment fetch when weather data arrives
+  if (data && !enrichment && !enrichmentLoading) {
+    fetchEnrichment(data.latitude, data.longitude);
+  }
 
   return (
     <div className="flex min-h-screen flex-col bg-gray-50 dark:bg-gray-950">
@@ -82,8 +105,8 @@ export default function HomePage() {
           </div>
 
           <SearchBar
-            onSearch={search}
-            onGeolocate={geolocate}
+            onSearch={handleSearch}
+            onGeolocate={handleGeolocate}
             loading={loading}
           />
         </div>
@@ -148,8 +171,12 @@ export default function HomePage() {
               loading={dbSaving}
             />
 
-            {/* Non-obvious insights */}
-            <InsightsPanel weather={data} />
+            {/* Non-obvious insights with enrichment data */}
+            <InsightsPanel
+              weather={data}
+              enrichment={enrichment}
+              enrichmentLoading={enrichmentLoading}
+            />
           </div>
         )}
 
@@ -170,78 +197,3 @@ export default function HomePage() {
   );
 }
 
-// ─────────────────────────────────────────────
-// Non-obvious insights panel
-// ─────────────────────────────────────────────
-import type { WeatherSearchResult } from "@/types/weather";
-
-function InsightsPanel({ weather }: { weather: WeatherSearchResult }) {
-  const { current, airQuality } = weather;
-  const insights: string[] = [];
-
-  // UV index insight (not in free current weather, but we can infer from time/clouds)
-  const cloudCover = current.clouds.all;
-  if (cloudCover < 20) {
-    insights.push("☀️ Clear skies — UV exposure may be high. Consider sunscreen if outdoors.");
-  }
-
-  // Wind chill / heat index
-  const temp = current.main.temp;
-  const humidity = current.main.humidity;
-  const windSpeed = current.wind.speed;
-
-  if (temp < 10 && windSpeed > 5) {
-    const windChill = Math.round(
-      13.12 + 0.6215 * temp - 11.37 * Math.pow(windSpeed * 3.6, 0.16) +
-      0.3965 * temp * Math.pow(windSpeed * 3.6, 0.16)
-    );
-    insights.push(`🥶 Wind chill makes it feel like ${windChill}°C — dress warmer than the temperature suggests.`);
-  }
-
-  if (temp > 27 && humidity > 60) {
-    insights.push("🥵 High heat and humidity — risk of heat exhaustion. Stay hydrated and avoid prolonged sun exposure.");
-  }
-
-  // Humidity comfort
-  if (humidity > 80) {
-    insights.push("💧 Very high humidity — sweat won't evaporate efficiently, making it feel hotter.");
-  } else if (humidity < 20) {
-    insights.push("🏜️ Very low humidity — dry air can cause skin irritation and dehydration. Drink extra water.");
-  }
-
-  // Visibility
-  if (current.visibility < 1000) {
-    insights.push("🌫️ Very low visibility (under 1km) — dangerous driving conditions. Use fog lights.");
-  } else if (current.visibility < 5000) {
-    insights.push("🌁 Reduced visibility — take care if driving or cycling.");
-  }
-
-  // Air quality
-  if (airQuality && airQuality.aqi >= 4) {
-    insights.push("😷 Poor air quality — consider wearing a mask outdoors, especially if you have respiratory conditions.");
-  }
-
-  // Sunrise/sunset travel tip
-  const now = Math.floor(Date.now() / 1000);
-  const minutesToSunset = Math.round((current.sys.sunset - now) / 60);
-  if (minutesToSunset > 0 && minutesToSunset < 60) {
-    insights.push(`🌅 Sunset in about ${minutesToSunset} minutes — great time for golden hour photos!`);
-  }
-
-  if (insights.length === 0) return null;
-
-  return (
-    <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 dark:border-amber-800 dark:bg-amber-950">
-      <h3 className="mb-3 font-semibold text-amber-800 dark:text-amber-200">
-        💡 Things to Consider
-      </h3>
-      <ul className="space-y-2">
-        {insights.map((insight, i) => (
-          <li key={i} className="text-sm text-amber-700 dark:text-amber-300">
-            {insight}
-          </li>
-        ))}
-      </ul>
-    </div>
-  );
-}

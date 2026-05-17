@@ -122,3 +122,43 @@ export interface ApiError {
   error: string;
   details?: string;
 }
+
+// ─────────────────────────────────────────────
+// Enrichment data (Open-Meteo — free, no key)
+// ─────────────────────────────────────────────
+
+export interface UVData {
+  uvIndex: number;
+  uvIndexMax: number;
+  uvLabel: string;
+  uvColor: string;
+}
+
+export interface PollenData {
+  alder: number | null;
+  birch: number | null;
+  grass: number | null;
+  mugwort: number | null;
+  olive: number | null;
+  ragweed: number | null;
+  dominantPollen: string;
+  level: "Low" | "Moderate" | "High" | "Very High";
+  levelColor: string;
+}
+
+export interface AirQualityEnriched {
+  europeanAqi: number | null;
+  usAqi: number | null;
+  pm25: number | null;
+  pm10: number | null;
+  no2: number | null;
+  o3: number | null;
+  label: string;
+  color: string;
+}
+
+export interface EnrichmentData {
+  uvData: UVData | null;
+  pollenData: PollenData | null;
+  airQuality: AirQualityEnriched | null;
+}
