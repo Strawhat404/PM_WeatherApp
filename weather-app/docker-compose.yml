@@ -1,0 +1,59 @@
+version: "3.9"
+
+services:
+  # ─────────────────────────────────────────────
+  # PostgreSQL Database
+  # ─────────────────────────────────────────────
+  db:
+    image: postgres:16-alpine
+    container_name: weather_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: weather_user
+      POSTGRES_PASSWORD: weather_pass
+      POSTGRES_DB: weather_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U weather_user -d weather_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # ─────────────────────────────────────────────
+  # Run Prisma migrations on startup
+  # ─────────────────────────────────────────────
+  migrate:
+    build: .
+    container_name: weather_migrate
+    command: npx prisma migrate deploy
+    environment:
+      DATABASE_URL: postgresql://weather_user:weather_pass@db:5432/weather_db
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: "no"
+
+  # ─────────────────────────────────────────────
+  # Next.js Application
+  # ─────────────────────────────────────────────
+  app:
+    build: .
+    container_name: weather_app
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: postgresql://weather_user:weather_pass@db:5432/weather_db
+    depends_on:
+      db:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+
+volumes:
+  postgres_data:

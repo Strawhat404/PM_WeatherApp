@@ -1,0 +1,35 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model WeatherSearch {
+  id               String   @id @default(cuid())
+  // Raw input from the user (city name, zip, coordinates, landmark, etc.)
+  locationInput    String
+  // Resolved display name from geocoding (e.g. "New York, US")
+  resolvedLocation String
+  latitude         Float
+  longitude        Float
+  // Optional date range for historical/range queries
+  dateRangeStart   DateTime?
+  dateRangeEnd     DateTime?
+  // Full weather API response stored as JSON
+  weatherData      Json
+  // 5-day forecast stored as JSON
+  forecastData     Json?
+  // Air quality data stored as JSON
+  airQualityData   Json?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@index([locationInput])
+  @@index([createdAt])
+}
