@@ -71,9 +71,7 @@ Thumbs.db
 # IDE & editor configs (team preference — keep
 # or remove based on your team's convention)
 # ─────────────────────────────────────────────
-.vscode/*
-!.vscode/extensions.json
-!.vscode/settings.json
+.vscode/
 .idea/
 *.swp
 *.swo
