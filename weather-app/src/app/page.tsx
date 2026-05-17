@@ -2,10 +2,12 @@
 
 import dynamic from "next/dynamic";
 import { useWeather } from "@/hooks/useWeather";
+import { useSearches } from "@/hooks/useSearches";
 import SearchBar from "@/components/SearchBar";
 import WeatherCard from "@/components/WeatherCard";
 import ForecastStrip from "@/components/ForecastStrip";
 import YouTubePanel from "@/components/YouTubePanel";
+import DateRangeSearch from "@/components/DateRangeSearch";
 import ErrorMessage from "@/components/ErrorMessage";
 import LoadingSpinner from "@/components/LoadingSpinner";
 import PMAcceleratorBanner from "@/components/PMAcceleratorBanner";
@@ -34,8 +36,19 @@ export default function HomePage() {
     clearError,
   } = useWeather();
 
+  const { create, saving: dbSaving } = useSearches();
+
   const handleSave = () => {
     if (data) saveSearch(data.current.name);
+  };
+
+  const handleRangeSearch = async (
+    location: string,
+    start: string,
+    end: string
+  ) => {
+    // Save the range query to DB automatically
+    await create(location, start, end);
   };
 
   return (
@@ -128,6 +141,12 @@ export default function HomePage() {
                 loading={videosLoading}
               />
             </div>
+
+            {/* Date range temperature query */}
+            <DateRangeSearch
+              onSearch={handleRangeSearch}
+              loading={dbSaving}
+            />
 
             {/* Non-obvious insights */}
             <InsightsPanel weather={data} />

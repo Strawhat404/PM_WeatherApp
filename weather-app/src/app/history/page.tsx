@@ -1,62 +1,70 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import type { SavedSearch } from "@/types/weather";
+import { useSearches } from "@/hooks/useSearches";
 import ErrorMessage from "@/components/ErrorMessage";
 import LoadingSpinner from "@/components/LoadingSpinner";
 import PMAcceleratorBanner from "@/components/PMAcceleratorBanner";
 
 export default function HistoryPage() {
-  const [searches, setSearches] = useState<SavedSearch[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const {
+    searches,
+    loading,
+    error,
+    deleting,
+    updating,
+    fetchAll,
+    update,
+    remove,
+    clearError,
+  } = useSearches();
+
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editLocation, setEditLocation] = useState("");
   const [editError, setEditError] = useState<string | null>(null);
-  const [editSaving, setEditSaving] = useState(false);
-
-  const fetchSearches = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const res = await fetch("/api/searches");
-      const json = await res.json();
-      if (!res.ok) throw new Error(json.error ?? "Failed to load history.");
-      setSearches(json.searches);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to load history.");
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+  const [sortField, setSortField] = useState<"createdAt" | "resolvedLocation">("createdAt");
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
+  const [filterText, setFilterText] = useState("");
 
   useEffect(() => {
-    fetchSearches();
-  }, [fetchSearches]);
+    fetchAll();
+  }, [fetchAll]);
 
-  const handleDelete = async (id: string) => {
-    if (!confirm("Delete this search record?")) return;
-    setDeletingId(id);
-    try {
-      const res = await fetch(`/api/searches/${id}`, { method: "DELETE" });
-      if (!res.ok) {
-        const json = await res.json();
-        setError(json.error ?? "Failed to delete.");
-        return;
-      }
-      setSearches((prev) => prev.filter((s) => s.id !== id));
-    } catch {
-      setError("Failed to delete. Please try again.");
-    } finally {
-      setDeletingId(null);
+  // ── Sorting & filtering ───────────────────────────────────────────────────
+  const displayed = [...searches]
+    .filter((s) =>
+      filterText
+        ? s.resolvedLocation.toLowerCase().includes(filterText.toLowerCase()) ||
+          s.locationInput.toLowerCase().includes(filterText.toLowerCase())
+        : true
+    )
+    .sort((a, b) => {
+      const valA = sortField === "createdAt" ? a.createdAt : a.resolvedLocation;
+      const valB = sortField === "createdAt" ? b.createdAt : b.resolvedLocation;
+      const cmp = valA < valB ? -1 : valA > valB ? 1 : 0;
+      return sortDir === "asc" ? cmp : -cmp;
+    });
+
+  const toggleSort = (field: typeof sortField) => {
+    if (sortField === field) {
+      setSortDir((d) => (d === "asc" ? "desc" : "asc"));
+    } else {
+      setSortField(field);
+      setSortDir("desc");
     }
   };
 
-  const startEdit = (search: SavedSearch) => {
-    setEditingId(search.id);
-    setEditLocation(search.locationInput);
+  const SortIcon = ({ field }: { field: typeof sortField }) => {
+    if (sortField !== field) return <span className="ml-1 text-gray-300">↕</span>;
+    return <span className="ml-1">{sortDir === "asc" ? "↑" : "↓"}</span>;
+  };
+
+  // ── Edit handlers ─────────────────────────────────────────────────────────
+  const startEdit = (s: SavedSearch) => {
+    setEditingId(s.id);
+    setEditLocation(s.locationInput);
     setEditError(null);
   };
 
@@ -71,30 +79,18 @@ export default function HistoryPage() {
       setEditError("Location cannot be empty.");
       return;
     }
-    setEditSaving(true);
-    setEditError(null);
-    try {
-      const res = await fetch(`/api/searches/${id}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ location: editLocation.trim() }),
-      });
-      const json = await res.json();
-      if (!res.ok) {
-        setEditError(json.error ?? "Failed to update.");
-        return;
-      }
-      setSearches((prev) =>
-        prev.map((s) => (s.id === id ? { ...s, ...json.search } : s))
-      );
-      cancelEdit();
-    } catch {
-      setEditError("Failed to update. Please try again.");
-    } finally {
-      setEditSaving(false);
-    }
+    const ok = await update(id, { location: editLocation.trim() });
+    if (ok) cancelEdit();
+    else setEditError("Failed to update. Please try again.");
   };
 
+  // ── Delete handler ────────────────────────────────────────────────────────
+  const handleDelete = async (id: string) => {
+    if (!confirm("Delete this search record?")) return;
+    await remove(id);
+  };
+
+  // ── Export ────────────────────────────────────────────────────────────────
   const handleExport = (format: "json" | "csv") => {
     window.open(`/api/export?format=${format}`, "_blank");
   };
@@ -104,10 +100,7 @@ export default function HistoryPage() {
       {/* Nav */}
       <header className="border-b border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-900">
         <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-4">
-          <Link
-            href="/"
-            className="text-xl font-bold text-gray-900 dark:text-white"
-          >
+          <Link href="/" className="text-xl font-bold text-gray-900 dark:text-white">
             ← 🌤️ WeatherApp
           </Link>
           <h1 className="text-lg font-semibold text-gray-700 dark:text-gray-200">
@@ -117,25 +110,36 @@ export default function HistoryPage() {
       </header>
 
       <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-8">
-        {/* Actions bar */}
+        {/* Toolbar */}
         <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
-          <p className="text-sm text-gray-500 dark:text-gray-400">
-            {searches.length} saved search{searches.length !== 1 ? "es" : ""}
-          </p>
+          <div className="flex items-center gap-3">
+            <p className="text-sm text-gray-500 dark:text-gray-400">
+              {searches.length} saved search{searches.length !== 1 ? "es" : ""}
+            </p>
+            {/* Filter */}
+            <input
+              type="text"
+              value={filterText}
+              onChange={(e) => setFilterText(e.target.value)}
+              placeholder="Filter by location…"
+              className="rounded-lg border border-gray-300 px-3 py-1.5 text-sm focus:border-blue-500 focus:outline-none dark:border-gray-600 dark:bg-gray-800 dark:text-white"
+              aria-label="Filter searches"
+            />
+          </div>
           <div className="flex gap-2">
             <button
               onClick={() => handleExport("json")}
               disabled={searches.length === 0}
               className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200"
             >
-              ⬇ Export JSON
+              ⬇ JSON
             </button>
             <button
               onClick={() => handleExport("csv")}
               disabled={searches.length === 0}
               className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200"
             >
-              ⬇ Export CSV
+              ⬇ CSV
             </button>
           </div>
         </div>
@@ -143,7 +147,7 @@ export default function HistoryPage() {
         {/* Error */}
         {error && (
           <div className="mb-4">
-            <ErrorMessage message={error} onDismiss={() => setError(null)} />
+            <ErrorMessage message={error} onDismiss={clearError} />
           </div>
         )}
 
@@ -167,28 +171,58 @@ export default function HistoryPage() {
           </div>
         )}
 
+        {/* No filter results */}
+        {!loading && searches.length > 0 && displayed.length === 0 && (
+          <p className="mt-8 text-center text-sm text-gray-400">
+            No results match &quot;{filterText}&quot;
+          </p>
+        )}
+
         {/* Table */}
-        {!loading && searches.length > 0 && (
+        {!loading && displayed.length > 0 && (
           <div className="overflow-x-auto rounded-xl border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800">
             <table className="w-full text-sm">
               <thead className="border-b border-gray-200 bg-gray-50 dark:border-gray-700 dark:bg-gray-900">
                 <tr>
-                  <th className="px-4 py-3 text-left font-semibold text-gray-600 dark:text-gray-300">Location</th>
-                  <th className="px-4 py-3 text-left font-semibold text-gray-600 dark:text-gray-300">Resolved</th>
-                  <th className="px-4 py-3 text-left font-semibold text-gray-600 dark:text-gray-300">Temp</th>
-                  <th className="px-4 py-3 text-left font-semibold text-gray-600 dark:text-gray-300">Conditions</th>
-                  <th className="px-4 py-3 text-left font-semibold text-gray-600 dark:text-gray-300">Saved</th>
-                  <th className="px-4 py-3 text-left font-semibold text-gray-600 dark:text-gray-300">Actions</th>
+                  <th className="px-4 py-3 text-left font-semibold text-gray-600 dark:text-gray-300">
+                    Location Input
+                  </th>
+                  <th
+                    className="cursor-pointer px-4 py-3 text-left font-semibold text-gray-600 hover:text-blue-600 dark:text-gray-300"
+                    onClick={() => toggleSort("resolvedLocation")}
+                  >
+                    Resolved <SortIcon field="resolvedLocation" />
+                  </th>
+                  <th className="px-4 py-3 text-left font-semibold text-gray-600 dark:text-gray-300">
+                    Temp
+                  </th>
+                  <th className="px-4 py-3 text-left font-semibold text-gray-600 dark:text-gray-300">
+                    Conditions
+                  </th>
+                  <th className="px-4 py-3 text-left font-semibold text-gray-600 dark:text-gray-300">
+                    Date Range
+                  </th>
+                  <th
+                    className="cursor-pointer px-4 py-3 text-left font-semibold text-gray-600 hover:text-blue-600 dark:text-gray-300"
+                    onClick={() => toggleSort("createdAt")}
+                  >
+                    Saved <SortIcon field="createdAt" />
+                  </th>
+                  <th className="px-4 py-3 text-left font-semibold text-gray-600 dark:text-gray-300">
+                    Actions
+                  </th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
-                {searches.map((s) => {
+                {displayed.map((s) => {
                   const weather = s.weatherData as unknown as Record<string, unknown> | null;
                   const main = weather?.main as Record<string, unknown> | undefined;
                   const weatherArr = weather?.weather as Array<Record<string, unknown>> | undefined;
                   const temp = main?.temp != null ? `${Math.round(main.temp as number)}°C` : "—";
                   const description = (weatherArr?.[0]?.description as string) ?? "—";
                   const isEditing = editingId === s.id;
+                  const isDeleting = deleting === s.id;
+                  const isUpdating = updating === s.id;
 
                   return (
                     <tr
@@ -203,8 +237,13 @@ export default function HistoryPage() {
                               type="text"
                               value={editLocation}
                               onChange={(e) => setEditLocation(e.target.value)}
+                              onKeyDown={(e) => {
+                                if (e.key === "Enter") handleUpdate(s.id);
+                                if (e.key === "Escape") cancelEdit();
+                              }}
                               className="rounded border border-gray-300 px-2 py-1 text-sm focus:border-blue-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white"
                               aria-label="Edit location"
+                              autoFocus
                             />
                             {editError && (
                               <p className="text-xs text-red-500">{editError}</p>
@@ -217,12 +256,12 @@ export default function HistoryPage() {
                         )}
                       </td>
 
-                      {/* Resolved location */}
+                      {/* Resolved */}
                       <td className="px-4 py-3 text-gray-600 dark:text-gray-300">
                         {s.resolvedLocation}
                       </td>
 
-                      {/* Temperature */}
+                      {/* Temp */}
                       <td className="px-4 py-3 font-semibold text-blue-600 dark:text-blue-400">
                         {temp}
                       </td>
@@ -230,6 +269,19 @@ export default function HistoryPage() {
                       {/* Conditions */}
                       <td className="px-4 py-3 capitalize text-gray-600 dark:text-gray-300">
                         {description}
+                      </td>
+
+                      {/* Date range */}
+                      <td className="px-4 py-3 text-xs text-gray-500 dark:text-gray-400">
+                        {s.dateRangeStart && s.dateRangeEnd ? (
+                          <>
+                            {new Date(s.dateRangeStart).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+                            {" → "}
+                            {new Date(s.dateRangeEnd).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+                          </>
+                        ) : (
+                          <span className="text-gray-300 dark:text-gray-600">—</span>
+                        )}
                       </td>
 
                       {/* Saved at */}
@@ -247,10 +299,10 @@ export default function HistoryPage() {
                           <div className="flex gap-2">
                             <button
                               onClick={() => handleUpdate(s.id)}
-                              disabled={editSaving}
+                              disabled={isUpdating}
                               className="rounded bg-blue-600 px-3 py-1 text-xs font-semibold text-white hover:bg-blue-700 disabled:opacity-50"
                             >
-                              {editSaving ? "Saving…" : "Save"}
+                              {isUpdating ? "Saving…" : "Save"}
                             </button>
                             <button
                               onClick={cancelEdit}
@@ -270,11 +322,11 @@ export default function HistoryPage() {
                             </button>
                             <button
                               onClick={() => handleDelete(s.id)}
-                              disabled={deletingId === s.id}
+                              disabled={isDeleting}
                               className="rounded border border-red-200 px-3 py-1 text-xs text-red-600 transition hover:bg-red-50 disabled:opacity-50 dark:border-red-800 dark:text-red-400 dark:hover:bg-red-950"
                               aria-label={`Delete ${s.locationInput}`}
                             >
-                              {deletingId === s.id ? "…" : "🗑 Delete"}
+                              {isDeleting ? "…" : "🗑 Delete"}
                             </button>
                           </div>
                         )}
