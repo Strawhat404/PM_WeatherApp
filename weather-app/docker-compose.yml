@@ -23,10 +23,12 @@ services:
       retries: 10
 
   # ─────────────────────────────────────────────
-  # Run Prisma migrations on startup
+  # Prisma migrations (runs once on startup)
   # ─────────────────────────────────────────────
   migrate:
-    build: .
+    build:
+      context: .
+      dockerfile: Dockerfile
     container_name: weather_migrate
     command: npx prisma migrate deploy
     environment:
@@ -40,7 +42,9 @@ services:
   # Next.js Application
   # ─────────────────────────────────────────────
   app:
-    build: .
+    build:
+      context: .
+      dockerfile: Dockerfile
     container_name: weather_app
     restart: unless-stopped
     ports:
@@ -48,12 +52,20 @@ services:
     env_file:
       - .env
     environment:
+      # Override DATABASE_URL to use the Docker service name
       DATABASE_URL: postgresql://weather_user:weather_pass@db:5432/weather_db
+      NODE_ENV: production
     depends_on:
       db:
         condition: service_healthy
       migrate:
         condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:3000/api/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
 
 volumes:
   postgres_data:
