@@ -13,17 +13,18 @@ import InsightsPanel from "@/components/InsightsPanel";
 import ErrorMessage from "@/components/ErrorMessage";
 import LoadingSpinner from "@/components/LoadingSpinner";
 import PMAcceleratorBanner from "@/components/PMAcceleratorBanner";
+import WeatherBackground from "@/components/WeatherBackground";
 import Link from "next/link";
 
-// Leaflet must be loaded client-side only (no SSR)
 const WeatherMap = dynamic(() => import("@/components/WeatherMap"), {
   ssr: false,
   loading: () => (
-    <div className="h-64 w-full animate-pulse rounded-xl bg-gray-200 dark:bg-gray-700 sm:h-80" />
+    <div className="h-64 w-full animate-pulse rounded-2xl bg-white/5 sm:h-80" />
   ),
 });
 
 export default function HomePage() {
+  // Single useWeather instance — all state and actions from one hook
   const {
     data,
     videos,
@@ -32,10 +33,10 @@ export default function HomePage() {
     error,
     saving,
     saveSuccess,
+    clearError,
+    saveSearch,
     search,
     geolocate,
-    saveSearch,
-    clearError,
   } = useWeather();
 
   const { create, saving: dbSaving } = useSearches();
@@ -46,19 +47,6 @@ export default function HomePage() {
     clear: clearEnrichment,
   } = useEnrichment();
 
-  const handleSave = () => {
-    if (data) saveSearch(data.current.name);
-  };
-
-  const handleRangeSearch = async (
-    location: string,
-    start: string,
-    end: string
-  ) => {
-    await create(location, start, end);
-  };
-
-  // Fetch enrichment data whenever weather data changes
   const handleSearch = (location: string) => {
     clearEnrichment();
     search(location);
@@ -69,77 +57,98 @@ export default function HomePage() {
     geolocate();
   };
 
-  // Trigger enrichment fetch when weather data arrives
+  const handleSave = () => {
+    if (data) saveSearch(data.current.name);
+  };
+
+  const handleRangeSearch = async (location: string, start: string, end: string) => {
+    await create(location, start, end);
+  };
+
+  // Fetch enrichment once weather data arrives
   if (data && !enrichment && !enrichmentLoading) {
     fetchEnrichment(data.latitude, data.longitude);
   }
 
   return (
-    <div className="flex min-h-screen flex-col bg-gray-50 dark:bg-gray-950">
+    <div className="min-h-screen flex flex-col">
+      <WeatherBackground />
+
       {/* Nav */}
-      <header className="border-b border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-900">
-        <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-4">
-          <h1 className="text-xl font-bold text-gray-900 dark:text-white">
-            🌤️ WeatherApp
-          </h1>
+      <header className="glass sticky top-0 z-40 border-b border-white/10">
+        <div className="mx-auto flex max-w-5xl items-center justify-between px-6 py-4">
+          <div className="flex items-center gap-3">
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-sky-500/20 text-sky-400 text-lg font-bold">
+              W
+            </div>
+            <span className="text-lg font-semibold text-white tracking-tight">
+              WeatherApp
+            </span>
+          </div>
           <Link
             href="/history"
-            className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-800"
+            className="rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-sm font-medium text-slate-300 transition hover:bg-white/10 hover:text-white"
           >
-            📋 Search History
+            Search History
           </Link>
         </div>
       </header>
 
       {/* Main */}
-      <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-8">
-        {/* Search */}
-        <div className="flex flex-col items-center gap-6">
-          <div className="text-center">
-            <h2 className="text-3xl font-bold text-gray-900 dark:text-white">
-              Real-Time Weather
-            </h2>
-            <p className="mt-2 text-gray-500 dark:text-gray-400">
-              Search any city, zip code, coordinates, or landmark
-            </p>
-          </div>
+      <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-10">
 
-          <SearchBar
-            onSearch={handleSearch}
-            onGeolocate={handleGeolocate}
-            loading={loading}
-          />
+        {/* Hero */}
+        <div className="mb-10 flex flex-col items-center gap-6 text-center">
+          <div className="inline-flex items-center gap-2 rounded-full border border-sky-500/30 bg-sky-500/10 px-4 py-1.5 text-xs font-medium text-sky-400">
+            Real-time weather data powered by OpenWeatherMap
+          </div>
+          <h1 className="text-5xl font-bold tracking-tight text-white sm:text-6xl">
+            Weather,{" "}
+            <span className="bg-gradient-to-r from-sky-400 to-indigo-400 bg-clip-text text-transparent">
+              anywhere.
+            </span>
+          </h1>
+          <p className="max-w-md text-slate-400">
+            Search any city, zip code, GPS coordinates, or landmark. Get current
+            conditions, forecasts, air quality, and more.
+          </p>
+          <div className="w-full max-w-2xl">
+            <SearchBar
+              onSearch={handleSearch}
+              onGeolocate={handleGeolocate}
+              loading={loading}
+            />
+          </div>
         </div>
 
         {/* Error */}
         {error && (
-          <div className="mt-6">
+          <div className="mb-6">
             <ErrorMessage message={error} onDismiss={clearError} />
           </div>
         )}
 
-        {/* Save success toast */}
+        {/* Save success */}
         {saveSuccess && (
           <div
             role="status"
             aria-live="polite"
-            className="mt-4 rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-800 dark:border-green-800 dark:bg-green-950 dark:text-green-200"
+            className="mb-4 rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-400"
           >
-            ✅ Search saved to history!
+            Search saved to history.
           </div>
         )}
 
         {/* Loading */}
         {loading && (
           <div className="mt-8">
-            <LoadingSpinner message="Fetching weather data…" />
+            <LoadingSpinner message="Fetching weather data..." />
           </div>
         )}
 
         {/* Results */}
         {!loading && data && (
-          <div className="mt-8 flex flex-col gap-6">
-            {/* Current weather */}
+          <div className="flex flex-col gap-5">
             <WeatherCard
               weather={data.current}
               airQuality={data.airQuality}
@@ -147,31 +156,20 @@ export default function HomePage() {
               onSave={handleSave}
               saving={saving}
             />
-
-            {/* 5-day forecast */}
             <ForecastStrip forecast={data.forecast} />
-
-            {/* Map + YouTube side by side on large screens */}
-            <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+            <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
               <WeatherMap
                 latitude={data.latitude}
                 longitude={data.longitude}
                 locationName={data.resolvedLocation}
               />
-              <YouTubePanel
-                videos={videos}
-                location={data.resolvedLocation}
-                loading={videosLoading}
-              />
             </div>
-
-            {/* Date range temperature query */}
-            <DateRangeSearch
-              onSearch={handleRangeSearch}
-              loading={dbSaving}
+            <YouTubePanel
+              videos={videos}
+              location={data.resolvedLocation}
+              loading={videosLoading}
             />
-
-            {/* Non-obvious insights with enrichment data */}
+            <DateRangeSearch onSearch={handleRangeSearch} loading={dbSaving} />
             <InsightsPanel
               weather={data}
               enrichment={enrichment}
@@ -182,12 +180,18 @@ export default function HomePage() {
 
         {/* Empty state */}
         {!loading && !data && !error && (
-          <div className="mt-16 text-center text-gray-400 dark:text-gray-600">
-            <p className="text-6xl">🌍</p>
-            <p className="mt-4 text-lg">Search a location to see the weather</p>
-            <p className="mt-1 text-sm">
-              Try &quot;New York&quot;, &quot;10001&quot;, or &quot;48.8566,2.3522&quot;
-            </p>
+          <div className="mt-8 grid grid-cols-2 gap-4 sm:grid-cols-4">
+            {[
+              { label: "Current Weather", desc: "Temperature, humidity, wind, pressure" },
+              { label: "5-Day Forecast", desc: "Daily highs, lows, and conditions" },
+              { label: "Air Quality", desc: "AQI, PM2.5, pollen levels, UV index" },
+              { label: "Location Map", desc: "Interactive map with OpenStreetMap" },
+            ].map((feature) => (
+              <div key={feature.label} className="glass rounded-2xl p-5">
+                <p className="text-sm font-semibold text-white">{feature.label}</p>
+                <p className="mt-1 text-xs text-slate-400">{feature.desc}</p>
+              </div>
+            ))}
           </div>
         )}
       </main>
@@ -196,4 +200,3 @@ export default function HomePage() {
     </div>
   );
 }
-

@@ -22,7 +22,7 @@ export default function SearchBar({ onSearch, onGeolocate, loading }: SearchBarP
   return (
     <form
       onSubmit={handleSubmit}
-      className="flex flex-col sm:flex-row gap-2 w-full max-w-2xl"
+      className="flex flex-col gap-2 sm:flex-row"
       role="search"
       aria-label="Weather search"
     >
@@ -36,17 +36,16 @@ export default function SearchBar({ onSearch, onGeolocate, loading }: SearchBarP
           type="text"
           value={input}
           onChange={(e) => setInput(e.target.value)}
-          placeholder="City, zip code, coordinates, or landmark…"
-          className="w-full rounded-lg border border-gray-300 bg-white px-4 py-3 pr-10 text-gray-900 placeholder-gray-400 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-800 dark:text-white dark:placeholder-gray-500"
+          placeholder="City, zip code, coordinates, or landmark..."
+          className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 pr-10 text-white placeholder-slate-500 backdrop-blur focus:border-sky-500/50 focus:outline-none focus:ring-2 focus:ring-sky-500/20"
           disabled={loading}
           autoComplete="off"
-          aria-label="Location search input"
         />
         {input && (
           <button
             type="button"
             onClick={() => { setInput(""); inputRef.current?.focus(); }}
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300"
             aria-label="Clear input"
           >
             ✕
@@ -57,21 +56,20 @@ export default function SearchBar({ onSearch, onGeolocate, loading }: SearchBarP
       <button
         type="submit"
         disabled={loading || !input.trim()}
-        className="rounded-lg bg-blue-600 px-6 py-3 font-semibold text-white shadow-sm transition hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:cursor-not-allowed disabled:opacity-50"
-        aria-label="Search weather"
+        className="rounded-xl bg-sky-500 px-6 py-3 font-semibold text-white transition hover:bg-sky-400 focus:outline-none focus:ring-2 focus:ring-sky-500/50 disabled:cursor-not-allowed disabled:opacity-40"
       >
-        {loading ? "Searching…" : "Search"}
+        {loading ? "Searching..." : "Search"}
       </button>
 
       <button
         type="button"
         onClick={onGeolocate}
         disabled={loading}
-        className="rounded-lg border border-gray-300 bg-white px-4 py-3 text-gray-700 shadow-sm transition hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:cursor-not-allowed disabled:opacity-50 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200"
+        className="rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm font-medium text-slate-300 transition hover:bg-white/10 hover:text-white focus:outline-none focus:ring-2 focus:ring-sky-500/20 disabled:cursor-not-allowed disabled:opacity-40"
         title="Use my current location"
         aria-label="Use my current location"
       >
-        📍 My Location
+        My Location
       </button>
     </form>
   );

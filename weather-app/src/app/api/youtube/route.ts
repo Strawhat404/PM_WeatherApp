@@ -33,7 +33,7 @@ export async function GET(request: NextRequest) {
     const res = await axios.get(`${YOUTUBE_BASE}/search`, {
       params: {
         part: "snippet",
-        q: `${location} travel tourism`,
+        q: `"${location}" travel explore city`,
         type: "video",
         maxResults: 4,
         relevanceLanguage: "en",

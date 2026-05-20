@@ -55,8 +55,8 @@ export function useWeather() {
         error: null,
       }));
 
-      // Fetch YouTube videos in parallel (non-blocking)
-      fetchVideos(location);
+      // Use the resolved location name for a more precise YouTube search
+      fetchVideos(json.resolvedLocation ?? location);
     } catch {
       setState((prev) => ({
         ...prev,

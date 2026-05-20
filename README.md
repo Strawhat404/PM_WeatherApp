@@ -3,10 +3,7 @@
 A full-stack weather application built with Next.js 14, PostgreSQL, and Docker.
 Covers both Tech Assessment #1 (Frontend) and Tech Assessment #2 (Backend).
 
-Built by **Your Name**
-
-Product Manager Accelerator is the world's first AI-powered product management career accelerator. We help aspiring and experienced PMs land top product roles through structured mentorship, real-world projects, and a global community of product leaders.
-[LinkedIn](https://www.linkedin.com/company/product-manager-accelerator)
+Built by **Yoseph Tesfaye** · [PM Accelerator](https://www.linkedin.com/company/product-manager-accelerator)
 
 ---
 
@@ -21,9 +18,9 @@ Product Manager Accelerator is the world's first AI-powered product management c
 
 ### Frontend
 - Search by city name, zip code, GPS coordinates, or landmark
-- Current weather: temperature in Celsius and Fahrenheit, feels like, humidity, wind speed, pressure, visibility
+- Current weather: temperature in Celsius and Fahrenheit, feels like, humidity, wind, pressure, visibility
 - 5-day forecast with daily summaries
-- Geolocation support — detect current location via browser
+- Geolocation — detect current location via browser
 - Interactive map powered by Leaflet and OpenStreetMap (no API key required)
 - YouTube video panel with in-page embed modal
 - Non-obvious weather insights: wind chill, heat index, UV index, pollen levels, air quality alerts
@@ -64,15 +61,20 @@ Product Manager Accelerator is the world's first AI-powered product management c
 
 ## Prerequisites
 
-- [Docker](https://docs.docker.com/get-docker/) and [Docker Compose](https://docs.docker.com/compose/)
-- An [OpenWeatherMap API key](https://openweathermap.org/api) — free tier, sign up takes 2 minutes
-- A [YouTube Data API v3 key](https://console.cloud.google.com/) — free tier, optional
+The only requirement is **Docker** and **Docker Compose**. Everything else (Node.js, PostgreSQL, dependencies) is handled automatically inside the containers.
+
+- [Install Docker](https://docs.docker.com/get-docker/)
+
+You will also need two free API keys:
+
+| Key | Where to get it | Free tier |
+|-----|----------------|-----------|
+| `OPENWEATHER_API_KEY` | [openweathermap.org/api](https://openweathermap.org/api) — sign up, key is instant | 1,000 calls/day |
+| `YOUTUBE_API_KEY` | [console.cloud.google.com](https://console.cloud.google.com) — enable YouTube Data API v3, create API key | 10,000 units/day |
 
 ---
 
-## Quick Start (Docker — Recommended)
-
-This is the easiest way to run the project. No need to install Node.js, PostgreSQL, or any other dependencies locally.
+## Quick Start
 
 ```bash
 # 1. Clone the repository
@@ -83,87 +85,69 @@ cd weather-app
 cp .env.example .env
 ```
 
-Open `.env` and fill in your API keys:
+Open `weather-app/.env` and fill in your API keys:
 
-```
+```env
 OPENWEATHER_API_KEY=your_openweathermap_key_here
 YOUTUBE_API_KEY=your_youtube_key_here
 ```
 
 ```bash
-# 3. Build and start everything
+# 3. Build and start everything — one command
 docker compose up --build
 ```
 
 The app will be available at **http://localhost:3000**
 
-Docker Compose starts three services in order:
-1. PostgreSQL database
-2. Prisma migration runner (applies the schema automatically)
-3. Next.js application
+Docker Compose automatically:
+1. Pulls and starts PostgreSQL
+2. Runs Prisma database migrations
+3. Builds and starts the Next.js application
 
-To stop the app:
+No manual database setup, no `npm install`, no Node.js required on the host machine.
+
+---
+
+## Stopping the App
+
 ```bash
+# Stop containers
 docker compose down
-```
 
-To stop and remove all stored data:
-```bash
+# Stop and remove all data (database included)
 docker compose down -v
 ```
 
 ---
 
-## Local Development (Without Docker)
-
-Requires Node.js 20 or higher and a running PostgreSQL instance.
-
-```bash
-# 1. Install dependencies
-npm install
-
-# 2. Set up environment variables
-cp .env.example .env
-# Edit .env and set DATABASE_URL to your local PostgreSQL connection string
-
-# 3. Generate Prisma client and push the schema
-npm run db:generate
-npm run db:push
-
-# 4. Start the development server
-npm run dev
-```
-
-App runs at **http://localhost:3000**
-
----
-
 ## Environment Variables
 
-| Variable                | Required | Description                                                                 |
-|-------------------------|----------|-----------------------------------------------------------------------------|
-| `DATABASE_URL`          | Yes      | PostgreSQL connection string                                                |
-| `OPENWEATHER_API_KEY`   | Yes      | OpenWeatherMap free tier key — [get one here](https://openweathermap.org/api) |
-| `YOUTUBE_API_KEY`       | Optional | YouTube Data API v3 key — videos panel is hidden if not set                |
-| `NEXT_PUBLIC_APP_URL`   | Optional | Public URL of the app (defaults to http://localhost:3000)                  |
+All variables are documented in `.env.example`. Copy it to `.env` and fill in your values.
+
+| Variable              | Required | Description |
+|-----------------------|----------|-------------|
+| `DATABASE_URL`        | Yes      | Set automatically by Docker Compose — do not change |
+| `OPENWEATHER_API_KEY` | Yes      | Free key from openweathermap.org |
+| `YOUTUBE_API_KEY`     | Yes      | Free key from Google Cloud Console (YouTube Data API v3) |
+| `NEXT_PUBLIC_APP_URL` | Optional | Defaults to http://localhost:3000 |
 
 ---
 
 ## API Reference
 
-| Method | Endpoint                                        | Description                                      |
-|--------|-------------------------------------------------|--------------------------------------------------|
-| GET    | `/api/weather?location=`                        | Current weather, 5-day forecast, and AQI         |
-| GET    | `/api/weather/range?location=&start=&end=`      | Daily temperatures for a date range              |
-| GET    | `/api/searches`                                 | List all saved searches                          |
-| POST   | `/api/searches`                                 | Save a new search to the database                |
-| GET    | `/api/searches/:id`                             | Get a single saved search by ID                  |
-| PUT    | `/api/searches/:id`                             | Update a saved search                            |
-| DELETE | `/api/searches/:id`                             | Delete a saved search                            |
-| GET    | `/api/youtube?location=`                        | YouTube videos for a location                    |
-| GET    | `/api/export?format=json` or `format=csv`       | Export all saved searches as JSON or CSV         |
-| GET    | `/api/enrichment?lat=&lon=`                     | UV index, pollen levels, enriched air quality    |
-| GET    | `/api/health`                                   | Health check — verifies app and database status  |
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/weather?location=` | Current weather, 5-day forecast, and AQI |
+| GET | `/api/weather/range?location=&start=&end=` | Daily temperatures for a date range |
+| GET | `/api/searches` | List all saved searches |
+| POST | `/api/searches` | Save a new search to the database |
+| GET | `/api/searches/:id` | Get a single saved search by ID |
+| PUT | `/api/searches/:id` | Update a saved search |
+| DELETE | `/api/searches/:id` | Delete a saved search |
+| GET | `/api/youtube?location=` | YouTube videos for a location |
+| GET | `/api/export?format=json\|csv` | Export all saved searches |
+| GET | `/api/enrichment?lat=&lon=` | UV index, pollen, enriched AQI |
+| GET | `/api/health` | Health check endpoint |
 
 ---
 
@@ -175,13 +159,7 @@ weather-app/
 │   ├── app/
 │   │   ├── page.tsx                  # Home page
 │   │   ├── history/page.tsx          # Search history page
-│   │   └── api/                      # API routes
-│   │       ├── weather/              # Current weather + date range
-│   │       ├── searches/             # CRUD operations
-│   │       ├── youtube/              # YouTube video search
-│   │       ├── export/               # JSON and CSV export
-│   │       ├── enrichment/           # UV, pollen, enriched AQI
-│   │       └── health/               # Health check endpoint
+│   │   └── api/                      # All API routes
 │   ├── components/                   # Reusable React components
 │   ├── hooks/                        # Custom React hooks
 │   ├── lib/                          # API clients and utilities
@@ -197,27 +175,16 @@ weather-app/
 
 ---
 
-## npm Scripts
+## npm Scripts (for local development without Docker)
 
-| Script              | Description                                      |
-|---------------------|--------------------------------------------------|
-| `npm run dev`       | Start development server with hot reload         |
-| `npm run build`     | Build the application for production             |
-| `npm run start`     | Start the production server                      |
-| `npm run lint`      | Run ESLint                                       |
-| `npm run db:generate` | Generate Prisma client from schema             |
-| `npm run db:migrate`  | Run pending database migrations                |
-| `npm run db:push`     | Push schema changes to database (dev only)     |
-| `npm run db:studio`   | Open Prisma Studio — visual database browser   |
+Requires Node.js 20+ and a running PostgreSQL instance.
 
----
-
-## Libraries and Packages
-
-A full list of installed packages is in `package.json`. Key dependencies:
-
-```
-npm install
-```
-
-All packages will be installed automatically. No additional setup required beyond filling in the `.env` file.
+| Script | Description |
+|--------|-------------|
+| `npm run dev` | Start development server |
+| `npm run build` | Build for production |
+| `npm run start` | Start production server |
+| `npm run db:generate` | Generate Prisma client |
+| `npm run db:migrate` | Run database migrations |
+| `npm run db:push` | Push schema to database (dev only) |
+| `npm run db:studio` | Open Prisma Studio — visual database browser |

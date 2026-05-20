@@ -96,14 +96,17 @@ export default function HistoryPage() {
   };
 
   return (
-    <div className="flex min-h-screen flex-col bg-gray-50 dark:bg-gray-950">
+    <div className="flex min-h-screen flex-col bg-mesh">
       {/* Nav */}
-      <header className="border-b border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-900">
-        <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-4">
-          <Link href="/" className="text-xl font-bold text-gray-900 dark:text-white">
-            ← 🌤️ WeatherApp
+      <header className="glass sticky top-0 z-40 border-b border-white/10">
+        <div className="mx-auto flex max-w-5xl items-center justify-between px-6 py-4">
+          <Link href="/" className="flex items-center gap-3">
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-sky-500/20 text-sky-400 text-lg font-bold">
+              W
+            </div>
+            <span className="text-lg font-semibold text-white tracking-tight">WeatherApp</span>
           </Link>
-          <h1 className="text-lg font-semibold text-gray-700 dark:text-gray-200">
+          <h1 className="text-sm font-medium text-slate-400">
             Search History
           </h1>
         </div>
@@ -113,16 +116,15 @@ export default function HistoryPage() {
         {/* Toolbar */}
         <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-3">
-            <p className="text-sm text-gray-500 dark:text-gray-400">
+            <p className="text-sm text-slate-400">
               {searches.length} saved search{searches.length !== 1 ? "es" : ""}
             </p>
-            {/* Filter */}
             <input
               type="text"
               value={filterText}
               onChange={(e) => setFilterText(e.target.value)}
-              placeholder="Filter by location…"
-              className="rounded-lg border border-gray-300 px-3 py-1.5 text-sm focus:border-blue-500 focus:outline-none dark:border-gray-600 dark:bg-gray-800 dark:text-white"
+              placeholder="Filter by location..."
+              className="rounded-xl border border-white/10 bg-white/5 px-3 py-1.5 text-sm text-white placeholder-slate-500 focus:border-sky-500/50 focus:outline-none"
               aria-label="Filter searches"
             />
           </div>
@@ -130,16 +132,16 @@ export default function HistoryPage() {
             <button
               onClick={() => handleExport("json")}
               disabled={searches.length === 0}
-              className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200"
+              className="rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-sm font-medium text-slate-300 transition hover:bg-white/10 hover:text-white disabled:cursor-not-allowed disabled:opacity-40"
             >
-              ⬇ JSON
+              Export JSON
             </button>
             <button
               onClick={() => handleExport("csv")}
               disabled={searches.length === 0}
-              className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200"
+              className="rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-sm font-medium text-slate-300 transition hover:bg-white/10 hover:text-white disabled:cursor-not-allowed disabled:opacity-40"
             >
-              ⬇ CSV
+              Export CSV
             </button>
           </div>
         </div>
@@ -156,15 +158,15 @@ export default function HistoryPage() {
 
         {/* Empty state */}
         {!loading && searches.length === 0 && !error && (
-          <div className="mt-16 text-center text-gray-400 dark:text-gray-600">
+          <div className="mt-16 text-center text-slate-500">
             <p className="text-5xl">📭</p>
-            <p className="mt-4 text-lg">No saved searches yet</p>
+            <p className="mt-4 text-lg text-white">No saved searches yet</p>
             <p className="mt-1 text-sm">
               Search for a location and click &quot;Save Search&quot; to see it here.
             </p>
             <Link
               href="/"
-              className="mt-4 inline-block rounded-lg bg-blue-600 px-5 py-2 text-sm font-semibold text-white hover:bg-blue-700"
+              className="mt-4 inline-block rounded-xl bg-sky-500 px-5 py-2 text-sm font-semibold text-white hover:bg-sky-400"
             >
               Go Search
             </Link>
@@ -173,47 +175,37 @@ export default function HistoryPage() {
 
         {/* No filter results */}
         {!loading && searches.length > 0 && displayed.length === 0 && (
-          <p className="mt-8 text-center text-sm text-gray-400">
+          <p className="mt-8 text-center text-sm text-slate-500">
             No results match &quot;{filterText}&quot;
           </p>
         )}
 
         {/* Table */}
         {!loading && displayed.length > 0 && (
-          <div className="overflow-x-auto rounded-xl border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800">
+          <div className="glass overflow-x-auto rounded-2xl">
             <table className="w-full text-sm">
-              <thead className="border-b border-gray-200 bg-gray-50 dark:border-gray-700 dark:bg-gray-900">
+              <thead className="border-b border-white/10">
                 <tr>
-                  <th className="px-4 py-3 text-left font-semibold text-gray-600 dark:text-gray-300">
-                    Location Input
-                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-400">Location</th>
                   <th
-                    className="cursor-pointer px-4 py-3 text-left font-semibold text-gray-600 hover:text-blue-600 dark:text-gray-300"
+                    className="cursor-pointer px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-400 hover:text-sky-400"
                     onClick={() => toggleSort("resolvedLocation")}
                   >
                     Resolved <SortIcon field="resolvedLocation" />
                   </th>
-                  <th className="px-4 py-3 text-left font-semibold text-gray-600 dark:text-gray-300">
-                    Temp
-                  </th>
-                  <th className="px-4 py-3 text-left font-semibold text-gray-600 dark:text-gray-300">
-                    Conditions
-                  </th>
-                  <th className="px-4 py-3 text-left font-semibold text-gray-600 dark:text-gray-300">
-                    Date Range
-                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-400">Temp</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-400">Conditions</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-400">Date Range</th>
                   <th
-                    className="cursor-pointer px-4 py-3 text-left font-semibold text-gray-600 hover:text-blue-600 dark:text-gray-300"
+                    className="cursor-pointer px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-400 hover:text-sky-400"
                     onClick={() => toggleSort("createdAt")}
                   >
                     Saved <SortIcon field="createdAt" />
                   </th>
-                  <th className="px-4 py-3 text-left font-semibold text-gray-600 dark:text-gray-300">
-                    Actions
-                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-400">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
+              <tbody className="divide-y divide-white/5">
                 {displayed.map((s) => {
                   const weather = s.weatherData as unknown as Record<string, unknown> | null;
                   const main = weather?.main as Record<string, unknown> | undefined;
@@ -227,7 +219,7 @@ export default function HistoryPage() {
                   return (
                     <tr
                       key={s.id}
-                      className="transition hover:bg-gray-50 dark:hover:bg-gray-750"
+                      className="transition hover:bg-white/5"
                     >
                       {/* Location input */}
                       <td className="px-4 py-3">
@@ -241,38 +233,22 @@ export default function HistoryPage() {
                                 if (e.key === "Enter") handleUpdate(s.id);
                                 if (e.key === "Escape") cancelEdit();
                               }}
-                              className="rounded border border-gray-300 px-2 py-1 text-sm focus:border-blue-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                              className="rounded-lg border border-white/10 bg-white/5 px-2 py-1 text-sm text-white focus:border-sky-500/50 focus:outline-none"
                               aria-label="Edit location"
                               autoFocus
                             />
                             {editError && (
-                              <p className="text-xs text-red-500">{editError}</p>
+                              <p className="text-xs text-red-400">{editError}</p>
                             )}
                           </div>
                         ) : (
-                          <span className="font-medium text-gray-800 dark:text-gray-100">
-                            {s.locationInput}
-                          </span>
+                          <span className="font-medium text-white">{s.locationInput}</span>
                         )}
                       </td>
-
-                      {/* Resolved */}
-                      <td className="px-4 py-3 text-gray-600 dark:text-gray-300">
-                        {s.resolvedLocation}
-                      </td>
-
-                      {/* Temp */}
-                      <td className="px-4 py-3 font-semibold text-blue-600 dark:text-blue-400">
-                        {temp}
-                      </td>
-
-                      {/* Conditions */}
-                      <td className="px-4 py-3 capitalize text-gray-600 dark:text-gray-300">
-                        {description}
-                      </td>
-
-                      {/* Date range */}
-                      <td className="px-4 py-3 text-xs text-gray-500 dark:text-gray-400">
+                      <td className="px-4 py-3 text-slate-400">{s.resolvedLocation}</td>
+                      <td className="px-4 py-3 font-semibold text-sky-400">{temp}</td>
+                      <td className="px-4 py-3 capitalize text-slate-400">{description}</td>
+                      <td className="px-4 py-3 text-xs text-slate-500">
                         {s.dateRangeStart && s.dateRangeEnd ? (
                           <>
                             {new Date(s.dateRangeStart).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
@@ -280,33 +256,27 @@ export default function HistoryPage() {
                             {new Date(s.dateRangeEnd).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
                           </>
                         ) : (
-                          <span className="text-gray-300 dark:text-gray-600">—</span>
+                          <span className="text-slate-700">—</span>
                         )}
                       </td>
-
-                      {/* Saved at */}
-                      <td className="px-4 py-3 text-gray-500 dark:text-gray-400">
+                      <td className="px-4 py-3 text-slate-500">
                         {new Date(s.createdAt).toLocaleDateString("en-US", {
-                          month: "short",
-                          day: "numeric",
-                          year: "numeric",
+                          month: "short", day: "numeric", year: "numeric",
                         })}
                       </td>
-
-                      {/* Actions */}
                       <td className="px-4 py-3">
                         {isEditing ? (
                           <div className="flex gap-2">
                             <button
                               onClick={() => handleUpdate(s.id)}
                               disabled={isUpdating}
-                              className="rounded bg-blue-600 px-3 py-1 text-xs font-semibold text-white hover:bg-blue-700 disabled:opacity-50"
+                              className="rounded-lg bg-sky-500 px-3 py-1 text-xs font-semibold text-white hover:bg-sky-400 disabled:opacity-40"
                             >
-                              {isUpdating ? "Saving…" : "Save"}
+                              {isUpdating ? "Saving..." : "Save"}
                             </button>
                             <button
                               onClick={cancelEdit}
-                              className="rounded border border-gray-300 px-3 py-1 text-xs text-gray-600 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300"
+                              className="rounded-lg border border-white/10 px-3 py-1 text-xs text-slate-400 hover:text-white"
                             >
                               Cancel
                             </button>
@@ -315,18 +285,16 @@ export default function HistoryPage() {
                           <div className="flex gap-2">
                             <button
                               onClick={() => startEdit(s)}
-                              className="rounded border border-gray-300 px-3 py-1 text-xs text-gray-600 transition hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700"
-                              aria-label={`Edit ${s.locationInput}`}
+                              className="rounded-lg border border-white/10 bg-white/5 px-3 py-1 text-xs text-slate-400 transition hover:bg-white/10 hover:text-white"
                             >
-                              ✏️ Edit
+                              Edit
                             </button>
                             <button
                               onClick={() => handleDelete(s.id)}
                               disabled={isDeleting}
-                              className="rounded border border-red-200 px-3 py-1 text-xs text-red-600 transition hover:bg-red-50 disabled:opacity-50 dark:border-red-800 dark:text-red-400 dark:hover:bg-red-950"
-                              aria-label={`Delete ${s.locationInput}`}
+                              className="rounded-lg border border-red-500/20 bg-red-500/10 px-3 py-1 text-xs text-red-400 transition hover:bg-red-500/20 disabled:opacity-40"
                             >
-                              {isDeleting ? "…" : "🗑 Delete"}
+                              {isDeleting ? "..." : "Delete"}
                             </button>
                           </div>
                         )}
