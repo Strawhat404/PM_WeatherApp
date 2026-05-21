@@ -10,6 +10,7 @@ import ForecastStrip from "@/components/ForecastStrip";
 import YouTubePanel from "@/components/YouTubePanel";
 import DateRangeSearch from "@/components/DateRangeSearch";
 import InsightsPanel from "@/components/InsightsPanel";
+import AISummary from "@/components/AISummary";
 import ErrorMessage from "@/components/ErrorMessage";
 import LoadingSpinner from "@/components/LoadingSpinner";
 import PMAcceleratorBanner from "@/components/PMAcceleratorBanner";
@@ -155,6 +156,13 @@ export default function HomePage() {
               resolvedLocation={data.resolvedLocation}
               onSave={handleSave}
               saving={saving}
+            />
+
+            {/* AI Summary */}
+            <AISummary
+              weather={data.current}
+              airQuality={data.airQuality}
+              location={data.resolvedLocation}
             />
             <ForecastStrip forecast={data.forecast} />
             <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
